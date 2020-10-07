@@ -2,6 +2,8 @@ import java.io.* ;
 import java.net.* ;
 import java.util.* ;
 
+import Server.Request.Bibliography;
+
 public final class Server {
     public static void main(String argv[]) throws IOException {
 	// Get the port number from the command line.
@@ -104,32 +106,36 @@ public final class Server {
                         }
                     }
                     insertDatabase(bibliography);//insert new bibliography into database
-        
-                }else if(requestType.equalsIgnoreCase("UPDATE")){// If req type is submit
-                    Bibliography bibliography=new Bibliography();//NOT DONE
+                }
+                
+                else if(requestType.equalsIgnoreCase("UPDATE")){// If req type is submit
+                    Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
+                    for (Query query : queries){// iterate over every query in the req
+                        query.setqueryInt();
+                        int typeInt= query.returnqueryInt();//Biblio class methods to id query type
+                        if(typeInt==0){
+                            bibliography.setISBN(Integer.parseInt(query.returnData()));//If query ISBN set bilbiography ISBN
+                        }else if(typeInt==1){
+                            bibliography.setTitle(query.returnData());//If query Title set bilbiography ISBN
+                        }else if(typeInt==2){
+                            bibliography.setAuthors(query.returnData());//If query Authors set bilbiography Authors
+                        }else if(typeInt==3){
+                            bibliography.setPublisher(query.returnData());//If query Publisher set bilbiography Publisher
+                        }else if(typeInt==4){
+                            bibliography.setYear(query.returnData());//If query year set bilbiography Year
+                        }
+                    }
+                    updateDatabase(biblio);//send bibliography object to update database method
+                }
+
+                else if(requestType.equalsIgnoreCase("GET")){
+                    ArrayList<Bibliography> response = new ArrayList<Bibliography>();//Arraylist of bibliography objects to store the matches of get methods
+                    Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
                     for (Query query : queries){
                         query.setqueryInt();
                         int typeInt= query.returnqueryInt();
-                        if(typeInt==0){
-                            bibliography.setISBN(Integer.parseInt(query.returnData()));
-                        }else if(typeInt==1){
-                            bibliography.setTitle(query.returnData());
-                        }else if(typeInt==2){
-                            bibliography.setAuthors(query.returnData());
-                        }else if(typeInt==3){
-                            bibliography.setPublisher(query.returnData());
-                        }else if(typeInt==4){
-                            bibliography.setYear(query.returnData());
-                        }
-                    }
-                }
-                else if(requestType.equalsIgnoreCase("GET")){
-                    ArrayList<Bibliography> response = new ArrayList<Bibliography>();
-                    Bibliography bibliography=new Bibliography();
-                    for (Query query : queries){
-                        int typeInt= query.returnqueryInt();
                         if (typeInt==5;){
-                            response=getAll(biblio);
+                            response=getAll();//returns all entries in database
                             break;
                         }else if(typeInt==0){
                             bibliography.setISBN(Integer.parseInt(query.returnData()));
@@ -143,22 +149,23 @@ public final class Server {
                             bibliography.setYear(query.returnData());
                         }
                     }
-                    response=get(bibliography);
-                    for(Bibliography biblio : response){
-                        ArrayList<String> output=biblio.toarrayString();
-                        for (String line:output){
-                            os.writeBytes(line);
+                    response=get(bibliography);//Returns entries that match in the database
+                    for(Bibliography biblio : response){//For all the matches in the database
+                        ArrayList<String> output=biblio.toarrayString();//returns bibliography as array list of lines to send to client
+                        for (String line:output){//For array of lines
+                            os.writeBytes(line);//Sends lines to client
                         }
-
                     }
 
                 }
                 else if(requestType.equalsIgnoreCase("REMOVE")){
-                    Bibliography bibliography=new Bibliography();
-                    for (Query query : queries){
+                    Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
+                    for (Query query : queries){//Loop through queries
+                        query.setqueryInt();
                         int typeInt= query.returnqueryInt();
                         if (typeInt==5;){
-                            removeallDatabase();
+                            removeallDatabase();//Removes all entries in database
+                            break;
                         }else if(typeInt==0){
                             bibliography.setISBN(Integer.parseInt(query.returnData()));
                         }else if(typeInt==1){
@@ -171,19 +178,8 @@ public final class Server {
                             bibliography.setYear(query.returnData());
                         }
                     }
-                    removeDatabase(bibliography);
+                    removeDatabase(bibliography);//removes entires that match the query from the database
                 }
-                
-                
-            
-        
-            // Debug info for private use
-            System.out.println("Incoming!!!");
-            System.out.println(firstLine);
-            String headerLine = null;
-            while ((headerLine = br.readLine()).length() != 0) {
-                System.out.println(headerLine);
-            }
             
                 os.close();
                 br.close();
@@ -281,7 +277,7 @@ public final class Server {
                     this.publisher = publisher;
                 }
                 public void setAuthors(String authorsString) {
-                    this.authors =Arrays.asList(authorsString.split(","));
+                    this.authors=Arrays.asList(authorsString.split(","));
                 }
                 public void setYear(int year) {
                     this.year = year;
@@ -304,22 +300,25 @@ public final class Server {
                 public ArrayList<String> toarrayString(){
                     ArrayList<String> output= new ArrayList<String>();
                     if(this.ISBN){
-                        output.add("ISBN".concat(Integer.toString(this.ISBN)));
+                        output.add("ISBN ".concat(Integer.toString(this.ISBN)));
                     }
                     if(this.title){
-                        output.add(this.title);
+                        output.add("TITLE ".concat(this.title));
                     }
                     if(this.authors){
                         String authorsString=String.join(",",this.authors);
-                        output.add(authorsString);
+                        output.add("AUTHORS ".concat(authorsString));
                     }
                     if(this.publisher){
-                        output.add(this.publisher);
+                        output.add("PUBLISHER ".concat(this.publisher));
                     }
                     if(this.year){
-                        output.add(Integer.toString(this.year));
+                        output.add("YEAR ".concat(Integer.toString(this.year)));
                     }
                     return output;
+                }
+                public void addAuthors(String author){
+                    this.authors.add(author);
                 }
             }
         }
@@ -364,12 +363,28 @@ public final class Server {
                 }
                 return remove;
             }
-            public ArrayList<Bibliography> getAll(Bibliography biblio){
+            public ArrayList<Bibliography> getAll(){
                 ArrayList<Bibliography> all= new ArrayList<Bibliography>();
                 for (Bibligraphy data: database){
                         all.add(data);
                 }
                 return all;
+            }
+            public boolean updateDatabase(Bibliography biblio){
+                boolean updated=false;
+                for (Bibliography data: database){
+                    if (data.getISBN()==(biblio.getISBN())){
+                        data.setTitle(biblio.getTitle());
+                        data.setPublisher(biblio.getPublisher());
+                        data.setYear(biblio.getYear());
+                        //data.setAuthors(authorsString);
+                        for (String authors: biblio.getAuthors()){
+                            data.addAuthors(authors);//Might want to replace authors, asking proffessor
+                        }
+                        update=true;
+                    }
+                }
+                return updated;
             }
     }
 
