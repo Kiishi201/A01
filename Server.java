@@ -1,19 +1,20 @@
+package src;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import Server.Request.Bibliography;
-import jdk.jfr.DataAmount;
 
 public final class Server {
+    CopyOnWriteArrayList<Bibliography> database = new CopyOnWriteArrayList<Bibliography>();// Multithread safe
+    // arraylist of type
+    // bibliogrpahy
+
     public static void main(String argv[]) throws IOException {
         // Get the port number from the command line.
 
-        CopyOnWriteArrayList<Bibliography> database = new CopyOnWriteArrayList<Bibliography>();// Multithread safe
-                                                                                               // arraylist of type
-                                                                                               // bibliogrpahy
-
+       
         int port = new Integer(argv[0]).intValue();// port nuactmber extr
 
         // Establish the listen socket.
@@ -39,29 +40,29 @@ public final class Server {
             }
 
             // Construct an object to process the request message.
-            Request req;
+            //Request req;
             try {
-                req = new Request(connect);
+                Request req = new Request(connect);
+                // Create a new thread to process the request.
+                Thread thread = new Thread(req);
+            
+                // Start the thread.
+                thread.start();
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             
-            // Create a new thread to process the request.
-            Thread thread = new Thread(req);
             
-            // Start the thread.
-            thread.start();
+            serverSocket.close();
         }
     }
     
-        final class Request implements Runnable {
-            final static String CRLF = "\r\n";
+         class Request implements Runnable {
             Socket socket;
-            
             // Constructor
-            public Request(Socket socket) throws Exception {
-            this.socket = socket;
+            public Request(Socket socketPassed) throws Exception {
+            this.socket = socketPassed;
             }
             
             // Implement the run() method of the Runnable interface.
@@ -82,7 +83,7 @@ public final class Server {
             String line;
             String requestType= br.readLine(); //get request type
             
-            ArrayList<Query> queries= new Arraylist<Query>(); //Array for the query to be stored
+            ArrayList<Query> queries= new ArrayList<Query>(); //Array for the query to be stored
                 while ((line=(br.readLine())) != null) {// Get message line
                     
                     Query temp=new Query();//helper Query class with type and data
@@ -136,7 +137,7 @@ public final class Server {
                             bibliography.setYear(Integer.parseInt(query.returnData()));//If query year set bilbiography Year
                         }
                     }
-                    updateDatabase(biblio);//send bibliography object to update database method
+                    updateDatabase(bibliography);//send bibliography object to update database method
                 }
 
                 else if(requestType.equalsIgnoreCase("GET")){
@@ -146,7 +147,7 @@ public final class Server {
                         for (Query query : queries){
                             query.setqueryInt();
                             int typeInt= query.returnqueryInt();
-                            if (typeInt==5;){
+                            if (typeInt==5){
                                 response=getAll();//returns all entries in database
                                 break;
                             }else if(typeInt==0){
@@ -181,7 +182,7 @@ public final class Server {
                     for (Query query : queries){//Loop through queries
                         query.setqueryInt();
                         int typeInt= query.returnqueryInt();
-                        if (typeInt==5;){
+                        if (typeInt==5){
                             removeallDatabase();//Removes all entries in database
                             break;
                         }else if(typeInt==0){
@@ -214,7 +215,8 @@ public final class Server {
     
             //Override compare
             @Override
-            public boolean equals(Bibliography o) { 
+            public boolean equals(Object o) {
+                
                 Boolean equalsRelative=true;
                 // If the object is compared with itself then return true   
                 if (o == this) { 
@@ -228,25 +230,25 @@ public final class Server {
                 } 
                 
                 // typecast o to Biblio so that we can compare data members  
-                Bibliography c = (Bibliography) o; 
+                Bibliography that = (Bibliography) o;
                 
                 // Compare the data members and return accordingly  
-                if (o.getTitle()!=null && !((o.getTitle()).equalsIgnoreCase(this.title))){
+                if (that.getTitle()!=null && !((that.getTitle()).equalsIgnoreCase(this.title))){
                     equalsRelative=false;
-                }if (o.getISBN()!=null && (o.getISBN()!=this.ISBN)){
+                }if (that.getISBN()!=null && (that.getISBN()!=this.ISBN)){
                     equalsRelative=false;
                 }
-                if (o.getAuthors()!=null){ 
-                    for (String oAuthors: o.getAuthors()){
+                if (that.getAuthors()!=null){ 
+                    for (String oAuthors: that.getAuthors()){
                         if(!(this.authors.contains(oAuthors))){
                             equalsRelative=false;
                         }
                     }
                 }
-                if (o.getPublisher()!=null && !((o.getPublisher()).equalsIgnoreCase(this.publisher))){
+                if (that.getPublisher()!=null && !((that.getPublisher()).equalsIgnoreCase(this.publisher))){
                     equalsRelative=false;
                 }
-                if (o.getYear()!=null && !((o.getYear())==this.year)){
+                if (that.getYear()!=null && !((that.getYear())==this.year)){
                     equalsRelative=false;
                 }
                 return equalsRelative;
@@ -316,7 +318,7 @@ public final class Server {
             
             void setqueryInt(){//Helper method for ID of query type: ISBN, Title, Authors, Publisher, Year or ALL
                 if(queryType.equalsIgnoreCase("ALL")){//ID's query type with an INT for easy arithmetic comparison of Queries
-                    queryType=5;
+                    querytypeInt=5;
                 }else if(queryType.equalsIgnoreCase("ISBN")){
                     querytypeInt=0;
                 }else if(queryType.equalsIgnoreCase("TITLE")){
@@ -364,7 +366,7 @@ public final class Server {
             }
         public boolean removeDatabase(Bibliography biblio){//Method to remove from database
             boolean remove=false;//returns boolean value with success of removal
-                for (Bibligraphy data: database){//iterate over database to check entries
+                for (Bibliography data: database){//iterate over database to check entries
                     if (data.equals(biblio)){
                         database.remove(data);//remove from database
                         remove=true;
@@ -374,9 +376,9 @@ public final class Server {
             }
         
             public boolean removeallDatabase(){//Method to clear database
-                ArrayList<Bibliogaphy> collect;//with an thread safe array list the fastest way to remove is to copy into another array and them remove all in one go
+                ArrayList<Bibliography> collect=new ArrayList<Bibliography>();//with an thread safe array list the fastest way to remove is to copy into another array and them remove all in one go
                 boolean remove=false;//var for success of removal
-                for (Bibligraphy data: database){
+                for (Bibliography data: database){
                    collect.add(data);
                 }//copy values to new array
                 try{
@@ -389,7 +391,7 @@ public final class Server {
             }
             public ArrayList<Bibliography> getAll(){//Method to return all entries in database
                 ArrayList<Bibliography> all= new ArrayList<Bibliography>();//arraylist to return all entries in database
-                for (Bibligraphy data: database){
+                for (Bibliography data: database){
                         all.add(data);
                 }
                 return all;//return all entries in database
@@ -405,7 +407,7 @@ public final class Server {
                         for (String authors: biblio.getAuthors()){
                             data.addAuthors(authors);//Might want to replace authors, asking proffessor
                         }
-                        update=true;
+                        updated=true;
                     }
                 }
                 return updated;
@@ -418,5 +420,6 @@ public final class Server {
                 }
             }
     }
+
 
 
