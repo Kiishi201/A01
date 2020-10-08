@@ -4,6 +4,8 @@ import java.net.Socket;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.Graphics;
@@ -24,7 +26,27 @@ import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
-public final class ClientGui {
+public class ClientGui extends JFrame implements ActionListener {
+    private JTextField ipAddText;
+    private JTextArea  ipAddArea;
+    private JTextField portNoText;
+    private JTextArea  portNoArea;
+    private JButton uButton;
+    private JButton sButton;
+    private JButton gButton;
+    private JButton rButton;
+    private final String conButton = "Connect";
+    private final String disconButton = "Disconnect"; 
+    protected JTextArea serverMsg;
+
+    
+
+
+
+}
+
+
+public class ClientGui {
     public static void main(String[] args) throws IOException{
         Socket s = null;
         PrintWriter p = null;
@@ -41,7 +63,7 @@ public final class ClientGui {
             System.err.println("x     ");
             System.exit(1);
         } catch (IOException e) {
-            System.err.println("frrr");
+            System.err.println("Could not listen on port: 4444");
             System.exit(1);
         }
         BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
@@ -60,6 +82,9 @@ public final class ClientGui {
 
 
         }
+
+
+
         JFrame frame = new JFrame("SUBMIT");
         frame.setVisible(true);
         frame.getContentPane().setBackground(Color.ORANGE);
