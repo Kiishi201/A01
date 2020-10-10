@@ -1,24 +1,19 @@
-import java.io.*;
-import java.net.*;
 import java.net.Socket;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.Color;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
@@ -46,11 +41,8 @@ public class ClientGui extends JFrame implements ActionListener {
     private JLabel publisherLabel;
     private JTextField yearField;
     private JLabel yearLabel;
+    private JTextArea entr;
 
-
-
-    private String textIP;
-    private int textPort;
     private JPanel panel;
     private JPanel secondaryPanelOne;
     private JPanel secondaryPanelTwo;
@@ -89,11 +81,17 @@ public class ClientGui extends JFrame implements ActionListener {
         this.publisherField = new JTextField(20);
         this.yearLabel = new JLabel("Year");
         this.yearField = new JTextField(20);
+        this.entr = new JTextArea();
 
+        this.sButton = new JButton("SUBMIT");
+        this.uButton = new JButton("UPDATE");
+        this.gButton = new JButton("GET");
+        this.rButton = new JButton("REMOVE");
+
+        this.sendButton = new JButton("Send Message");
 
         // this.serverMsg = new JTextArea(10, 30);
         // this.serverMsg.setEditable(false);
-        // addActionListeners();
 
         this.secondaryPanelOne.add(this.ipLabel);
         this.secondaryPanelOne.add(this.ipAddText);
@@ -101,10 +99,7 @@ public class ClientGui extends JFrame implements ActionListener {
         this.secondaryPanelOne.add(this.portNoText);
         this.secondaryPanelOne.add(this.connectButton);
 
-        this.sButton = new JButton("SUBMIT");
-        this.uButton = new JButton("UPDATE");
-        this.gButton = new JButton("GET");
-        this.rButton = new JButton("REMOVE");
+        addActionListeners();
 
         this.buttonPanel.add(this.sButton);
         this.buttonPanel.add(this.uButton);
@@ -125,8 +120,6 @@ public class ClientGui extends JFrame implements ActionListener {
         this.secondaryPanelTwo.add(this.buttonPanel);
         this.secondaryPanelTwo.add(this.inputPanel);
 
-        this.sendButton = new JButton("Send Message");
-
         this.panel.add(this.secondaryPanelOne);
         this.panel.add(this.secondaryPanelTwo);
         this.panel.add(this.userMsg);
@@ -135,6 +128,7 @@ public class ClientGui extends JFrame implements ActionListener {
         this.setSize(400, 300);
         this.setVisible(true);
     }
+
     // connect
     void addActionListeners() {
         this.connectButton.addActionListener(new ActionListener() {
@@ -147,7 +141,7 @@ public class ClientGui extends JFrame implements ActionListener {
                     connectButton.setText(disconButton);
                 } else if (connectButton.getText() == disconButton) {
                     try {
-                        out.close();  // change variables
+                        out.close(); // change variables
                         in.close();
                         kkSocket.close();
                     } catch (IOException e1) {
@@ -164,7 +158,7 @@ public class ClientGui extends JFrame implements ActionListener {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String message = userMsg.getText();
-                if(message!= "" && isConnected()) {
+                if (message != "" && isConnected()) {
                     out.write(message);
                     out.flush();
                 }
@@ -174,129 +168,129 @@ public class ClientGui extends JFrame implements ActionListener {
         this.sButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                boolean realYear = checkYear(this.yearField);
+                boolean realYear = checkYear(yearField.getText());
 
-                if(checkISBN(this.isbnField.getText()) && realYear) {
-                    checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
+                if (checkISBN(isbnField.getText()) && realYear) {
+                    checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                    String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
-                    String line = "Submit" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
-                    try { 
+                    String finalIsbn = isbnField.getText().replaceAll("-", "");
+                    String line = "Submit" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
+                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
+                            + "\r\n";
+                    try {
                         out.println(line);
                         Scanner scn = new Scanner(kkSocket.getInputStream());
 
-                        while(scn.hasNextLine())
-                            reply.setText(scn.nextLine());
+                        while (scn.hasNextLine())
+                            entr.setText(scn.nextLine());
                         scn.close();
-                        
-                        kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
-                        out = new PrintWriter(socket.getOutputStream(), true);
 
-                    }
-                    catch (Exception ex) {
+                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(kkSocket.getOutputStream(), true);
+
+                    } catch (Exception ex) {
                         System.out.println(ex);
 
                     }
-                }else {
-                    //if()
-                    reply.setText("Error");
+                } else {
+                    // if()
+                    entr.setText("Error");
                 }
             }
-       });
+        });
         // update
         this.uButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
-                if(checkYear(this.yearField)) {
-                    checkMsg(this.isbnField,this.titleTextField,this.authorField,this.publisherField,this.yearField);
+                if (checkYear(yearField.getText())) {
+                    checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                    String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
-                    String line = "Update" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
-                    
-                        try{ 
-                            out.println(line);
-                            Scanner scn = new Scanner(kkSocket.getInputStream());
-                            while (scn.hasNextLine())
-                                reply.setText(scan.nextLine());
-                            
-                            kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
-                            out = new PrintWriter(socket.getOutputStream(), true);
-                            scn.close();
-                        }
-                        catch (Exception ex) {
-                            System.out.println(ex);
-                        }
-                }else{
-                    reply.setText("Invalid");
+                    String finalIsbn = isbnField.getText().replaceAll("-", "");
+                    String line = "Update" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
+                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
+                            + "\r\n";
+
+                    try {
+                        out.println(line);
+                        Scanner scn = new Scanner(kkSocket.getInputStream());
+                        while (scn.hasNextLine())
+                            entr.setText(scn.nextLine());
+
+                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(kkSocket.getOutputStream(), true);
+                        scn.close();
+                    } catch (Exception ex) {
+                        System.out.println(ex);
+                    }
+                } else {
+                    entr.setText("Invalid");
                 }
 
             }
 
         });
-        //get
+        // get
         this.gButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
-                String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
-                String line = "Get" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
+                checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
+                String finalIsbn = isbnField.getText().replaceAll("-", "");
+                String line = "Get" + ";" + finalIsbn + ";" + titleTextField.getText() + ";" + authorField.getText()
+                        + ";" + publisherField.getText() + ";" + yearField.getText() + "\r\n";
 
                 try {
                     out.println(line);
                     String newline;
 
                     Scanner scn = new Scanner(kkSocket.getInputStream());
-                    reply.setText("");
-                    while(scan.hasNextLine()) {
+                    entr.setText("");
+                    while (scn.hasNextLine()) {
                         newline = scn.nextLine();
                         System.out.println(newline);
-                        reply.append("\n");
-                        reply.append(newline);
+                        entr.append("\n");
+                        entr.append(newline);
                     }
                     scn.close();
-                    kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
-                    out = new PrintWriter(socket.getOutputStream(), true);
+                    kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                    out = new PrintWriter(kkSocket.getOutputStream(), true);
 
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     System.out.println(ex);
                 }
             }
         });
 
         // REMOVE
-        this.rbutton.addActionListener(new ActionListener() {
+        this.rButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 int dialogButton = JOptionPane.YES_NO_OPTION;
-                int dialogResult = JOptionPane.showConfirmDialog(null, "warning","!",dialogButton);
+                int dialogResult = JOptionPane.showConfirmDialog(null, "warning", "!", dialogButton);
 
-                if(dialogResult == JOptionPane.YES_OPTION) {
-                    checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
+                if (dialogResult == JOptionPane.YES_OPTION) {
+                    checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
-                String line = "Remove" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
-                try{
-                    out.println(line);
-                    Scanner scn = new Scanner(kkSocket.getInputStream());
-                while (scn.hasNextLine())
-                    reply.setText(scn.nextLine());
-                scn.close();
+                    String finalIsbn = isbnField.getText().replaceAll("-", "");
+                    String line = "Remove" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
+                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
+                            + "\r\n";
+                    try {
+                        out.println(line);
+                        Scanner scn = new Scanner(kkSocket.getInputStream());
+                        while (scn.hasNextLine())
+                            entr.setText(scn.nextLine());
+                        scn.close();
 
-                kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
-                out = new PrintWriter(socket.getOutputStream(), true);
+                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(kkSocket.getOutputStream(), true);
 
-                } catch (Exception ex) {
-                    System.out.println(ex);
+                    } catch (Exception ex) {
+                        System.out.println(ex);
+                    }
+
+                } else {
+                    entr.append("cancelled");
                 }
-                
-
-                
-                }else{
-                    reply.append("cancelled");
-                }
-             }
+            }
         });
-
-
     }
     /*
      * public void actionPerformed(ActionEvent e) { if(e.getSource() == sendButton)
@@ -346,61 +340,71 @@ public class ClientGui extends JFrame implements ActionListener {
     // System.exit(1);
     // }
 
-
-
-    public boolean checkYear(String yearField){
-        if (yearField.getText().equals("") || yearField.getText().equalsIgnoreCase("N/A")) {
+    public boolean checkYear(String yearField) {
+        if (yearField.equals("") || yearField.equalsIgnoreCase("N/A")) {
             return true;
-        } else{
-            try { int no = Integer.parseInt(yearField.getText());
-            if (no>=0){
-                return true;
-            
-            }else {
-                return false;
-            }
-        } catch (NumberFormatException e) {
-            return  false;
+        } else {
+            try {
+                int no = Integer.parseInt(yearField);
+                if (no >= 0) {
+                    return true;
 
+                } else {
+                    return false;
+                }
+            } catch (NumberFormatException e) {
+                return false;
+
+            }
         }
     }
-    }
 
-    public boolean checkISBN (String isbnField) {
-        boolean bool =false;
+    public boolean checkISBN(String isbnField) {
+        boolean bool = false;
         int num = 0;
-        if ( ISBN == null) {
+        if (isbnField.compareTo("") == 0) {
             bool = false;
         }
-        String realnum = isbnField.replaceAll("-","");
-        if (realnum.length()!=13) {
+        String realnum = isbnField.replaceAll("-", "");
+        if (realnum.length() != 13) {
             bool = false;
         } else {
-            if(!realnum.matches("[a-bC-D]+")) {
-                for (int x = 0; x < 12; x++ ){
-                    int number = Integer.parseInt( realnum.substring(x, x +1) );
-                    num += (x % 2 == 0 ) ? number * 1 : number * 3;
-                
+            if (!realnum.matches("[a-bC-D]+")) {
+                for (int x = 0; x < 12; x++) {
+                    int number = Integer.parseInt(realnum.substring(x, x + 1));
+                    num += (x % 2 == 0) ? number * 1 : number * 3;
+
                 }
-                int checknum = 10 -  (num % 10);
-                if ( checknum == 10) {
+                int checknum = 10 - (num % 10);
+                if (checknum == 10) {
                     checknum = 0;
                 }
                 bool = checknum == Integer.parseInt(realnum.substring(12));
-            }else{
+            } else {
                 bool = false;
             }
         }
 
-
         return bool;
     }
 
-    public static void main(String args[]) {
-        try {
-            new ClientGui();
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+    public void checkMsg(JTextField isbnField, JTextField titleTextField, JTextField authorField,
+            JTextField publisherField, JTextField yearField) {
+        if (isbnField.getText().isEmpty() || isbnField.getText().trim().length() == 0) {
+            isbnField.setText("N/A");
+
+        }
+        if (titleTextField.getText().isEmpty() || titleTextField.getText().trim().length() == 0) {
+            titleTextField.setText("N/A");
+        }
+        if (authorField.getText().isEmpty() || authorField.getText().trim().length() == 0) {
+            authorField.setText("N/A");
+        }
+        if (publisherField.getText().isEmpty() || publisherField.getText().trim().length() == 0) {
+            publisherField.setText("N/A");
+        }
+        if (yearField.getText().isEmpty() || yearField.getText().trim().length() == 0) {
+            yearField.setText("N/A");
         }
 
     }
@@ -429,5 +433,14 @@ public class ClientGui extends JFrame implements ActionListener {
 
     Boolean isConnected() {
         return !kkSocket.isClosed();
+    }
+
+    public static void main(String args[]) {
+        try {
+            new ClientGui();
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
     }
 }
