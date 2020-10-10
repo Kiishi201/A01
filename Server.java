@@ -17,13 +17,12 @@ public final class Server {
 
        
     	int port = Integer.parseInt(argv[0]);// port nuactmber extr
-    	System.out.println("port: "+port);
+
         //int port=80;
         // Establish the listen socket.
         ServerSocket serverSocket = null;
         try {
             serverSocket = new ServerSocket(port);// socket creation
-            System.out.println("Socket created with port");
             //System.out.println(port);
         } catch (IOException e) {
             System.err.println("Port busy already"); // error message
@@ -37,27 +36,25 @@ public final class Server {
             Socket connect = null;
             try {
                 connect = serverSocket.accept();
+                System.out.println("Socket Connected");
                 
             } catch (IOException e) {
                 System.err.println("Accept failed.");// Error message
                 System.out.println(e);
                 System.exit(1);
             }
-            System.out.println("Socket Accept success");
 
             // Construct an object to process the request message.
             Request req;
             try {
                 req = new Server.Request(connect);
                 //req = new Server().new Request(connect);
-                System.out.println("Request success!");
                 // Create a new thread to process the request.
                 Thread thread = new Thread(req);
-                System.out.println("Thread created");
             
                 // Start the thread.
                 thread.start();
-                System.out.println("Thread ran");
+                System.out.println("Thread started");
             } catch (Exception e) {
                 // TODO Auto-generated catch block
                 System.out.println("Request/thread creation failed: "+ e);
@@ -74,12 +71,10 @@ public final class Server {
             // Constructor
             public Request(Socket socketPassed) throws Exception {
             this.socket = socketPassed;
-            System.out.println("Socket passed");
             }
             
             // Implement the run() method of the Runnable interface.
             public void run() {
-            	System.out.println("Run() called");
                 
                 try {
                 	InputStream is = socket.getInputStream();
@@ -109,10 +104,9 @@ public final class Server {
             // Set up input stream filters.
             BufferedReader br = new BufferedReader(new InputStreamReader(is));
              */
+            	System.out.println("Process started");
             String line;
             String requestType= br.readLine(); //get request type
-            System.out.println("------Process() started------");
-            System.out.println("Request type:"+requestType);
             ArrayList<Query> queries= new ArrayList<Query>(); //Array for the query to be stored
             	while(br.ready()) {
             		line = br.readLine().trim();
@@ -135,11 +129,12 @@ public final class Server {
 	                    temp.setData(second.trim());//set query data
 	
 	                    queries.add(temp);// Add to query array
+	                    System.out.println(line);
             		}
                     
                 }//Repeat for all lists received
                 if(requestType.equalsIgnoreCase("SUBMIT")){// If req type is submit
-                	System.out.println("SUBMIT entered");
+                	
                     Bibliography bibliography=new Bibliography(); //Bibliography class for storage of bibliography
                     for (Query query : queries){// iterate over every query in the req
                         query.setqueryInt();
@@ -158,15 +153,10 @@ public final class Server {
                     }
                     if(!(Server.insertDatabase(bibliography))){//insert new bibliography into database
                         //send error message
-                    	System.out.println("Submit not accepted");
-                    }else{
-                        System.out.println("Submit accepted");
-                        Server.printDatabase();
                     }
                 }
                 
                 else if(requestType.equalsIgnoreCase("UPDATE")){// If req type is submit
-                	System.out.println("UPDATE entered");
                     Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
                     for (Query query : queries){// iterate over every query in the req
                         query.setqueryInt();
@@ -184,16 +174,11 @@ public final class Server {
                         }
                     }
                     if(Server.updateDatabase(bibliography)){ //send bibliography object to update database method
-                    	System.out.println("Update accepted");
-                    	Server.printDatabase();
-                    }else {
-                    	System.out.println("UPDATE failed :(");
                     }
                     
                 }
 
                 else if(requestType.equalsIgnoreCase("GET")){
-                	System.out.println("GET entered");
                     if (!(Server.databaseEmpty())){
                         ArrayList<Bibliography> response = new ArrayList<Bibliography>();//Arraylist of bibliography objects to store the matches of get methods
                         Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
@@ -217,7 +202,6 @@ public final class Server {
                         }
                         response=Server.get(bibliography);//Returns entries that match in the database
                         if(!(response.isEmpty())){
-                        	System.out.println("Printing Get");
                         	os.println("WIPE");
                             for(Bibliography biblio : response){//For all the matches in the database
                             ArrayList<String> output=biblio.toarrayString();//returns bibliography as array list of lines to send to client
@@ -225,7 +209,6 @@ public final class Server {
                                     //os.write(outLine);//Sends lines to client
                                 	
                                 	os.println(outLine);
-                                    System.out.println(outLine);
                                 }
                                 os.println("SPACE");
                             }
@@ -233,16 +216,13 @@ public final class Server {
                         }else{
                             //os.write("No matches found");
                             os.println("No matches found");
-                            System.out.println("No matches for GET");
                         }
                     }else{
                         //os.write("Database empty, get request invalid");
                         os.println("Database empty, get request invalid");
-                        System.out.println("Database empty, get request invalid");
                     }
                 }
                 else if(requestType.equalsIgnoreCase("REMOVE")){
-                	System.out.println("REMOVE entered");
                 	if (!(Server.databaseEmpty())){
 	                	Bibliography bibliography=new Bibliography();//Bibliography class for storage of bibliography
 	                    for (Query query : queries){//Loop through queries
@@ -264,25 +244,18 @@ public final class Server {
 	                        }
 	                    }
 	                    if(Server.removeDatabase(bibliography)){//removes entires that match the query from the database
-	                    	System.out.println("Removing from database");
-	                    	Server.printDatabase();
 	                    }else {
 	                    	os.println("No matches found to remove");
-                            System.out.println("No matches for REMOVE");
 	                    }
                 	}else{
                         os.println("Database empty, get request invalid");
-                        System.out.println("Database empty, get request invalid");
                     }
                 }
-                System.out.println("End of SUB, UPDATE, GET or REMOVE options");
                 
                 if(!(socket.isConnected())) {
                 	
-                    System.out.println("Streams and sockets closed");
                 }
                 
-                System.out.println("Process done");
             }
         }
         public static class Bibliography{//Helper Bibliography class that helps with storing of all book entries
@@ -501,14 +474,17 @@ public final class Server {
                     return false;
                 }
             }
-            public static void printDatabase(){
-                for(Bibliography biblio: Server.getAll()){
-                    for (String printing: biblio.toarrayString()){
-                        System.out.println(printing);
-                    }
-                    System.out.println("\n");
-                }
-            }
+           
+			  public static void printDatabase(){
+				  for(Bibliography biblio:Server.getAll()){ 
+					  for (String printing: biblio.toarrayString()){
+						  System.out.println(printing);
+					  }
+					  System.out.println("\n"); 
+				  }
+			 
+			 } 
+			 
     }
 
 
