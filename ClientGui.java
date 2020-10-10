@@ -1,6 +1,5 @@
-
-//import java.io.*;
-//import java.net.*;
+import java.io.*;
+import java.net.*;
 import java.net.Socket;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,21 +8,22 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-//import java.awt.Graphics;
+import java.awt.Graphics;
 import java.awt.GridLayout;
-//import java.awt.Color;
-//import java.awt.Font;
+import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JButton;
-//import javax.swing.JFrame;
+import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 @SuppressWarnings("serial")
-public class ClientGUI extends JFrame implements ActionListener {
+public class ClientGui extends JFrame implements ActionListener {
     private JTextField ipAddText;
     private JTextField portNoText;
     private JButton connectButton;
@@ -34,28 +34,41 @@ public class ClientGUI extends JFrame implements ActionListener {
     private JButton rButton;
     private final String conButton = "Connect";
     private final String disconButton = "Disconnect";
-    protected static JTextArea serverMsg;
+    protected JTextArea serverMsg;
     private JTextArea userMsg;
+    private JTextField isbnField;
+    private JLabel isbnLabel;
+    private JTextField titleTextField;
+    private JLabel titleLabel;
+    private JTextField authorField;
+    private JLabel authorLabel;
+    private JTextField publisherField;
+    private JLabel publisherLabel;
+    private JTextField yearField;
+    private JLabel yearLabel;
 
-    //private String textIP;
-    //private int textPort;
+
+
+    private String textIP;
+    private int textPort;
     private JPanel panel;
     private JPanel secondaryPanelOne;
     private JPanel secondaryPanelTwo;
+    private JPanel inputPanel;
     private JPanel buttonPanel;
 
     private JLabel ipLabel;
     private JLabel portLabel;
 
-    private static  Socket clientSocket = null;
+    private Socket kkSocket = null;
     private PrintWriter out = null;
-    private static BufferedReader in = null;
-    
-    private static boolean connected=false;
-    public ClientGUI() {
-        this.panel = new JPanel(new GridLayout(3, 1));
+    private BufferedReader in = null;
+
+    public ClientGui() {
+        this.panel = new JPanel(new GridLayout(4, 1));
         this.secondaryPanelOne = new JPanel(new GridLayout(1, 5));
         this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
+        this.inputPanel = new JPanel(new GridLayout(5, 2));
         this.buttonPanel = new JPanel(new GridLayout(4, 1));
         // this.ipAddText = new JTextField(10);
         // this.portNoText = new JTextField(5);
@@ -65,13 +78,22 @@ public class ClientGUI extends JFrame implements ActionListener {
         this.portLabel = new JLabel("Port");
         this.portNoText = new JTextField(4);
         this.connectButton = new JButton(conButton);
-        this.sendButton = new JButton("Send Message");
         this.userMsg = new JTextArea();
-        ClientGUI.serverMsg = new JTextArea();
-        
+        this.isbnLabel = new JLabel("Isbn");
+        this.isbnField = new JTextField(20);
+        this.titleLabel = new JLabel("Title");
+        this.titleTextField = new JTextField(20);
+        this.authorLabel = new JLabel("Author");
+        this.authorField = new JTextField(20);
+        this.publisherLabel = new JLabel("Publisher");
+        this.publisherField = new JTextField(20);
+        this.yearLabel = new JLabel("Year");
+        this.yearField = new JTextField(20);
+
+
         // this.serverMsg = new JTextArea(10, 30);
         // this.serverMsg.setEditable(false);
-        addActionListeners();
+        // addActionListeners();
 
         this.secondaryPanelOne.add(this.ipLabel);
         this.secondaryPanelOne.add(this.ipAddText);
@@ -89,22 +111,31 @@ public class ClientGUI extends JFrame implements ActionListener {
         this.buttonPanel.add(this.gButton);
         this.buttonPanel.add(this.rButton);
 
-        this.secondaryPanelTwo.add(this.buttonPanel);
-        this.secondaryPanelTwo.add(this.userMsg);
-        this.secondaryPanelTwo.add(ClientGUI.serverMsg);
+        this.inputPanel.add(this.isbnLabel);
+        this.inputPanel.add(this.isbnField);
+        this.inputPanel.add(this.titleLabel);
+        this.inputPanel.add(this.titleTextField);
+        this.inputPanel.add(this.authorLabel);
+        this.inputPanel.add(this.authorField);
+        this.inputPanel.add(this.publisherLabel);
+        this.inputPanel.add(this.publisherField);
+        this.inputPanel.add(this.yearLabel);
+        this.inputPanel.add(this.yearField);
 
-        
+        this.secondaryPanelTwo.add(this.buttonPanel);
+        this.secondaryPanelTwo.add(this.inputPanel);
+
+        this.sendButton = new JButton("Send Message");
 
         this.panel.add(this.secondaryPanelOne);
         this.panel.add(this.secondaryPanelTwo);
+        this.panel.add(this.userMsg);
         this.panel.add(this.sendButton);
         this.add(this.panel);
-        this.setSize(800, 600);
+        this.setSize(400, 300);
         this.setVisible(true);
-       
-        
     }
-
+    // connect
     void addActionListeners() {
         this.connectButton.addActionListener(new ActionListener() {
 
@@ -115,29 +146,157 @@ public class ClientGUI extends JFrame implements ActionListener {
                 if (connectButton.getText() == conButton && connectToPort(ip, port)) {
                     connectButton.setText(disconButton);
                 } else if (connectButton.getText() == disconButton) {
-					/*
-					 * try { out.close(); // change variables in.close(); clientSocket.close(); }
-					 * catch (IOException e1) { e1.printStackTrace(); }
-					 */
+                    try {
+                        out.close();  // change variables
+                        in.close();
+                        kkSocket.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                     connectButton.setText(conButton);
                 }
             }
 
         });
-
+        // send
         this.sendButton.addActionListener(new ActionListener() {
 
             @Override
-            public void actionPerformed(ActionEvent e) {		
+            public void actionPerformed(ActionEvent e) {
                 String message = userMsg.getText();
-                if((!(message.isBlank())) && isConnected()) {
-                	//System.out.println("Message: "+message);
-                    out.write(message +"\n");
+                if(message!= "" && isConnected()) {
+                    out.write(message);
                     out.flush();
                 }
-                //out.write("\n");
             }
         });
+        // submit
+        this.sButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                boolean realYear = checkYear(this.yearField);
+
+                if(checkISBN(this.isbnField.getText()) && realYear) {
+                    checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
+
+                    String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
+                    String line = "Submit" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
+                    try { 
+                        out.println(line);
+                        Scanner scn = new Scanner(kkSocket.getInputStream());
+
+                        while(scn.hasNextLine())
+                            reply.setText(scn.nextLine());
+                        scn.close();
+                        
+                        kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
+                        out = new PrintWriter(socket.getOutputStream(), true);
+
+                    }
+                    catch (Exception ex) {
+                        System.out.println(ex);
+
+                    }
+                }else {
+                    //if()
+                    reply.setText("Error");
+                }
+            }
+       });
+        // update
+        this.uButton.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                if(checkYear(this.yearField)) {
+                    checkMsg(this.isbnField,this.titleTextField,this.authorField,this.publisherField,this.yearField);
+
+                    String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
+                    String line = "Update" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
+                    
+                        try{ 
+                            out.println(line);
+                            Scanner scn = new Scanner(kkSocket.getInputStream());
+                            while (scn.hasNextLine())
+                                reply.setText(scan.nextLine());
+                            
+                            kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
+                            out = new PrintWriter(socket.getOutputStream(), true);
+                            scn.close();
+                        }
+                        catch (Exception ex) {
+                            System.out.println(ex);
+                        }
+                }else{
+                    reply.setText("Invalid");
+                }
+
+            }
+
+        });
+        //get
+        this.gButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
+                String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
+                String line = "Get" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
+
+                try {
+                    out.println(line);
+                    String newline;
+
+                    Scanner scn = new Scanner(kkSocket.getInputStream());
+                    reply.setText("");
+                    while(scan.hasNextLine()) {
+                        newline = scn.nextLine();
+                        System.out.println(newline);
+                        reply.append("\n");
+                        reply.append(newline);
+                    }
+                    scn.close();
+                    kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
+                    out = new PrintWriter(socket.getOutputStream(), true);
+
+                }
+                catch (Exception ex) {
+                    System.out.println(ex);
+                }
+            }
+        });
+
+        // REMOVE
+        this.rbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int dialogButton = JOptionPane.YES_NO_OPTION;
+                int dialogResult = JOptionPane.showConfirmDialog(null, "warning","!",dialogButton);
+
+                if(dialogResult == JOptionPane.YES_OPTION) {
+                    checkMsg(this.isbnField, this.titleTextField, this.authorField, this.publisherField,this.yearField);
+
+                String finaLIsbn = thsis.isbnField.getText().replaceAll("-","");
+                String line = "Remove" + ";" + this.isbnField + ";" + this.titleTextField.getText() + ";" + this.authorField.getText() + ";" + this.publisherField.getText() + ";" + this.yearField.getText()+ "\r\n";
+                try{
+                    out.println(line);
+                    Scanner scn = new Scanner(kkSocket.getInputStream());
+                while (scn.hasNextLine())
+                    reply.setText(scn.nextLine());
+                scn.close();
+
+                kkSocket = new Socket(this.ipAddText.getText(), Integer.parseInt(this.portNoText.getText()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+
+                } catch (Exception ex) {
+                    System.out.println(ex);
+                }
+                
+
+                
+                }else{
+                    reply.append("cancelled");
+                }
+             }
+        });
+
+
     }
     /*
      * public void actionPerformed(ActionEvent e) { if(e.getSource() == sendButton)
@@ -187,24 +346,62 @@ public class ClientGUI extends JFrame implements ActionListener {
     // System.exit(1);
     // }
 
+
+
+    public boolean checkYear(String yearField){
+        if (yearField.getText().equals("") || yearField.getText().equalsIgnoreCase("N/A")) {
+            return true;
+        } else{
+            try { int no = Integer.parseInt(yearField.getText());
+            if (no>=0){
+                return true;
+            
+            }else {
+                return false;
+            }
+        } catch (NumberFormatException e) {
+            return  false;
+
+        }
+    }
+    }
+
+    public boolean checkISBN (String isbnField) {
+        boolean bool =false;
+        int num = 0;
+        if ( ISBN == null) {
+            bool = false;
+        }
+        String realnum = isbnField.replaceAll("-","");
+        if (realnum.length()!=13) {
+            bool = false;
+        } else {
+            if(!realnum.matches("[a-bC-D]+")) {
+                for (int x = 0; x < 12; x++ ){
+                    int number = Integer.parseInt( realnum.substring(x, x +1) );
+                    num += (x % 2 == 0 ) ? number * 1 : number * 3;
+                
+                }
+                int checknum = 10 -  (num % 10);
+                if ( checknum == 10) {
+                    checknum = 0;
+                }
+                bool = checknum == Integer.parseInt(realnum.substring(12));
+            }else{
+                bool = false;
+            }
+        }
+
+
+        return bool;
+    }
+
     public static void main(String args[]) {
         try {
-            new ClientGUI();
+            new ClientGui();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
-        System.out.println("Client built");
-        
-        //in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        /*try {
-			in = new BufferedReader(new InputStreamReader(ClientGUI.clientSocket.getInputStream()));
-		} catch (Exception e) {
-            System.out.println(e);
-            e.printStackTrace();
-        }*/
-        while(!(ClientGUI.connected)) {
-        }
-        receive(ClientGUI.in);
 
     }
 
@@ -215,48 +412,22 @@ public class ClientGUI extends JFrame implements ActionListener {
     }
 
     Boolean connectToPort(String ip, int port) {
-    	
         try {
-            clientSocket = new Socket(ip, port);
-            out = new PrintWriter(clientSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            System.out.println("Reader and Writer built");
-            connected=true;
+            kkSocket = new Socket(ip, port);
+            out = new PrintWriter(kkSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(kkSocket.getInputStream()));
             return true;
         } catch (UnknownHostException e) {
-            System.err.println("Host is unknown");
+            System.err.println("Don't know about host: taranis.");
+            System.exit(1);
         } catch (IOException e) {
-            System.err.println("I/O invalid for socket connection");
+            System.err.println("Couldn't get I/O for the connection to: taranis.");
+            System.exit(1);
         }
         return false;
     }
 
-    static Boolean isConnected() {
-        return !clientSocket.isClosed();
-    }
-    public static void receive(BufferedReader in){
-        while(isConnected()){}
-            String serverComm;
-            System.out.println("Receiving");
-                try {
-                    while(in.ready()) {
-                        serverComm = in.readLine().trim();
-                        if(!(serverComm.isEmpty())) {
-                        if(serverComm.equalsIgnoreCase("WIPE")) {
-                            serverMsg.setText("");
-                        }else if(serverComm.equalsIgnoreCase("SPACE")){
-                            serverMsg.append("\n");
-                        }
-                            else {
-                            System.out.println("Server: "+serverComm);
-                            serverMsg.append(serverComm+ "\n");
-                            }
-                        }
-                            
-                    }
-                } catch (Exception e) {
-                    System.out.println(e);
-                    e.printStackTrace();
-            }
+    Boolean isConnected() {
+        return !kkSocket.isClosed();
     }
 }
