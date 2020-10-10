@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
+import java.awt.Color;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,7 +20,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 @SuppressWarnings("serial")
-public class ClientGui extends JFrame implements ActionListener {
+public class ClientGUI extends JFrame implements ActionListener {
     private JTextField ipAddText;
     private JTextField portNoText;
     private JButton connectButton;
@@ -29,7 +31,7 @@ public class ClientGui extends JFrame implements ActionListener {
     private JButton rButton;
     private final String conButton = "Connect";
     private final String disconButton = "Disconnect";
-    protected JTextArea serverMsg;
+    protected static JTextArea serverMsg;
     private JTextArea userMsg;
     private JTextField isbnField;
     private JLabel isbnLabel;
@@ -52,14 +54,15 @@ public class ClientGui extends JFrame implements ActionListener {
     private JLabel ipLabel;
     private JLabel portLabel;
 
-    private Socket kkSocket = null;
+    private static  Socket clientSocket = null;
     private PrintWriter out = null;
-    private BufferedReader in = null;
-
-    public ClientGui() {
+    private static BufferedReader in = null;
+    private static boolean connected=false;
+    public ClientGUI() {
         this.panel = new JPanel(new GridLayout(4, 1));
         this.secondaryPanelOne = new JPanel(new GridLayout(1, 5));
-        this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
+        //this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
+        this.secondaryPanelTwo = new JPanel(new GridLayout(5, 3));
         this.inputPanel = new JPanel(new GridLayout(5, 2));
         this.buttonPanel = new JPanel(new GridLayout(4, 1));
         // this.ipAddText = new JTextField(10);
@@ -71,6 +74,9 @@ public class ClientGui extends JFrame implements ActionListener {
         this.portNoText = new JTextField(4);
         this.connectButton = new JButton(conButton);
         this.userMsg = new JTextArea();
+        userMsg.setBackground(Color.RED);
+        //ClientGUI.serverMsg = new JTextArea();
+        //ClientGUI.serverMsg.setBackground(Color.RED);
         this.isbnLabel = new JLabel("Isbn");
         this.isbnField = new JTextField(20);
         this.titleLabel = new JLabel("Title");
@@ -101,31 +107,56 @@ public class ClientGui extends JFrame implements ActionListener {
 
         addActionListeners();
 
-        this.buttonPanel.add(this.sButton);
-        this.buttonPanel.add(this.uButton);
-        this.buttonPanel.add(this.gButton);
-        this.buttonPanel.add(this.rButton);
+		/*
+		 * this.buttonPanel.add(this.sButton); this.buttonPanel.add(this.uButton);
+		 * this.buttonPanel.add(this.gButton); this.buttonPanel.add(this.rButton);
+		 */
+        this.secondaryPanelTwo.add(this.sButton);
+        this.secondaryPanelTwo.add(this.isbnLabel);
+        this.secondaryPanelTwo.add(this.isbnField);
+        this.secondaryPanelTwo.add(this.uButton);
+        this.secondaryPanelTwo.add(this.titleLabel);
+        this.secondaryPanelTwo.add(this.titleTextField);
+        this.secondaryPanelTwo.add(this.gButton);
+        this.secondaryPanelTwo.add(this.authorLabel);
+        this.secondaryPanelTwo.add(this.authorField);
+        this.secondaryPanelTwo.add(this.rButton);
+        this.secondaryPanelTwo.add(this.publisherLabel);
+        this.secondaryPanelTwo.add(this.publisherField);
+        this.secondaryPanelTwo.add(new JLabel(""));
+        this.secondaryPanelTwo.add(this.yearLabel);
+        this.secondaryPanelTwo.add(this.yearField);
+		/*
+		 * this.inputPanel.add(this.isbnLabel); this.inputPanel.add(this.isbnField);
+		 * this.inputPanel.add(this.titleLabel);
+		 * this.inputPanel.add(this.titleTextField);
+		 * this.inputPanel.add(this.authorLabel); this.inputPanel.add(this.authorField);
+		 * this.inputPanel.add(this.publisherLabel);
+		 * this.inputPanel.add(this.publisherField);
+		 * this.inputPanel.add(this.yearLabel); this.inputPanel.add(this.yearField);
+		 */
+        
+        
+        
+        
+        
+        
+        
+       
+        
 
-        this.inputPanel.add(this.isbnLabel);
-        this.inputPanel.add(this.isbnField);
-        this.inputPanel.add(this.titleLabel);
-        this.inputPanel.add(this.titleTextField);
-        this.inputPanel.add(this.authorLabel);
-        this.inputPanel.add(this.authorField);
-        this.inputPanel.add(this.publisherLabel);
-        this.inputPanel.add(this.publisherField);
-        this.inputPanel.add(this.yearLabel);
-        this.inputPanel.add(this.yearField);
-
-        this.secondaryPanelTwo.add(this.buttonPanel);
-        this.secondaryPanelTwo.add(this.inputPanel);
+		/*
+		 * this.secondaryPanelTwo.add(this.buttonPanel);
+		 * this.secondaryPanelTwo.add(this.inputPanel);
+		 */
 
         this.panel.add(this.secondaryPanelOne);
         this.panel.add(this.secondaryPanelTwo);
         this.panel.add(this.userMsg);
+        //this.panel.add(ClientGUI.serverMsg);
         this.panel.add(this.sendButton);
         this.add(this.panel);
-        this.setSize(400, 300);
+        this.setSize(800, 600);
         this.setVisible(true);
     }
 
@@ -143,7 +174,7 @@ public class ClientGui extends JFrame implements ActionListener {
                     try {
                         out.close(); // change variables
                         in.close();
-                        kkSocket.close();
+                        clientSocket.close();
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -164,7 +195,7 @@ public class ClientGui extends JFrame implements ActionListener {
                 }
             }
         });
-        // submit
+        // SUBMIT
         this.sButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -173,20 +204,19 @@ public class ClientGui extends JFrame implements ActionListener {
                 if (checkISBN(isbnField.getText()) && realYear) {
                     checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                    String finalIsbn = isbnField.getText().replaceAll("-", "");
-                    String line = "Submit" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
-                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
-                            + "\r\n";
+                    String finalISBN = isbnField.getText().replaceAll("-", "");
+                    String line = "SUBMIT\n".concat(outputLine(finalISBN, titleTextField.getText(), authorField.getText(), publisherField.getText(), yearField.getText()));
                     try {
                         out.println(line);
-                        Scanner scn = new Scanner(kkSocket.getInputStream());
+                        System.out.println("out: "+line);
+                        Scanner scn = new Scanner(clientSocket.getInputStream());
 
                         while (scn.hasNextLine())
                             entr.setText(scn.nextLine());
                         scn.close();
 
-                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
-                        out = new PrintWriter(kkSocket.getOutputStream(), true);
+                        clientSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(clientSocket.getOutputStream(), true);
 
                     } catch (Exception ex) {
                         System.out.println(ex);
@@ -195,29 +225,34 @@ public class ClientGui extends JFrame implements ActionListener {
                 } else {
                     // if()
                     entr.setText("Error");
+                    System.out.println("GUI submit error");
                 }
             }
         });
-        // update
+        // UPDATE
         this.uButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
                 if (checkYear(yearField.getText())) {
                     checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                    String finalIsbn = isbnField.getText().replaceAll("-", "");
-                    String line = "Update" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
-                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
-                            + "\r\n";
+                    String finalISBN = isbnField.getText().replaceAll("-", "");
+                    String line = "UPDATE\n".concat(outputLine(finalISBN, titleTextField.getText(), authorField.getText(), publisherField.getText(), yearField.getText()));
+					/*
+					 * String line = "Update" + ";" + finalIsbn + ";" + titleTextField.getText() +
+					 * ";" + authorField.getText() + ";" + publisherField.getText() + ";" +
+					 * yearField.getText() + "\r\n";
+					 */
 
                     try {
                         out.println(line);
-                        Scanner scn = new Scanner(kkSocket.getInputStream());
+                        System.out.println("out: "+line);
+                        Scanner scn = new Scanner(clientSocket.getInputStream());
                         while (scn.hasNextLine())
                             entr.setText(scn.nextLine());
 
-                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
-                        out = new PrintWriter(kkSocket.getOutputStream(), true);
+                        clientSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(clientSocket.getOutputStream(), true);
                         scn.close();
                     } catch (Exception ex) {
                         System.out.println(ex);
@@ -229,19 +264,23 @@ public class ClientGui extends JFrame implements ActionListener {
             }
 
         });
-        // get
+        // GET
         this.gButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
-                String finalIsbn = isbnField.getText().replaceAll("-", "");
-                String line = "Get" + ";" + finalIsbn + ";" + titleTextField.getText() + ";" + authorField.getText()
-                        + ";" + publisherField.getText() + ";" + yearField.getText() + "\r\n";
-
+                String finalISBN = isbnField.getText().replaceAll("-", "");
+                String line = "GET\n".concat(outputLine(finalISBN, titleTextField.getText(), authorField.getText(), publisherField.getText(), yearField.getText()));
+				/*
+				 * String line = "Get" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
+				 * + authorField.getText() + ";" + publisherField.getText() + ";" +
+				 * yearField.getText() + "\r\n";
+				 */
                 try {
                     out.println(line);
+                    System.out.println("out: "+line);
                     String newline;
 
-                    Scanner scn = new Scanner(kkSocket.getInputStream());
+                    Scanner scn = new Scanner(clientSocket.getInputStream());
                     entr.setText("");
                     while (scn.hasNextLine()) {
                         newline = scn.nextLine();
@@ -250,8 +289,8 @@ public class ClientGui extends JFrame implements ActionListener {
                         entr.append(newline);
                     }
                     scn.close();
-                    kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
-                    out = new PrintWriter(kkSocket.getOutputStream(), true);
+                    clientSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                    out = new PrintWriter(clientSocket.getOutputStream(), true);
 
                 } catch (Exception ex) {
                     System.out.println(ex);
@@ -268,19 +307,23 @@ public class ClientGui extends JFrame implements ActionListener {
                 if (dialogResult == JOptionPane.YES_OPTION) {
                     checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
 
-                    String finalIsbn = isbnField.getText().replaceAll("-", "");
-                    String line = "Remove" + ";" + finalIsbn + ";" + titleTextField.getText() + ";"
-                            + authorField.getText() + ";" + publisherField.getText() + ";" + yearField.getText()
-                            + "\r\n";
+                    String finalISBN = isbnField.getText().replaceAll("-", "");
+                    String line = "REMOVE\n".concat(outputLine(finalISBN, titleTextField.getText(), authorField.getText(), publisherField.getText(), yearField.getText()));
+					/*
+					 * String line = "Remove" + ";" + finalIsbn + ";" + titleTextField.getText() +
+					 * ";" + authorField.getText() + ";" + publisherField.getText() + ";" +
+					 * yearField.getText() + "\r\n";
+					 */
                     try {
                         out.println(line);
-                        Scanner scn = new Scanner(kkSocket.getInputStream());
+                        System.out.println("out: "+line);
+                        Scanner scn = new Scanner(clientSocket.getInputStream());
                         while (scn.hasNextLine())
                             entr.setText(scn.nextLine());
                         scn.close();
 
-                        kkSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
-                        out = new PrintWriter(kkSocket.getOutputStream(), true);
+                        clientSocket = new Socket(ipAddText.getText(), Integer.parseInt(portNoText.getText()));
+                        out = new PrintWriter(clientSocket.getOutputStream(), true);
 
                     } catch (Exception ex) {
                         System.out.println(ex);
@@ -341,7 +384,7 @@ public class ClientGui extends JFrame implements ActionListener {
     // }
 
     public boolean checkYear(String yearField) {
-        if (yearField.equals("") || yearField.equalsIgnoreCase("N/A")) {
+        if (yearField==null || yearField.isEmpty()|| yearField.equalsIgnoreCase("N/A") ) {
             return true;
         } else {
             try {
@@ -417,9 +460,9 @@ public class ClientGui extends JFrame implements ActionListener {
 
     Boolean connectToPort(String ip, int port) {
         try {
-            kkSocket = new Socket(ip, port);
-            out = new PrintWriter(kkSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(kkSocket.getInputStream()));
+            clientSocket = new Socket(ip, port);
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             return true;
         } catch (UnknownHostException e) {
             System.err.println("Don't know about host: taranis.");
@@ -431,16 +474,64 @@ public class ClientGui extends JFrame implements ActionListener {
         return false;
     }
 
-    Boolean isConnected() {
-        return !kkSocket.isClosed();
+    static Boolean isConnected() {
+        return !clientSocket.isClosed();
     }
 
     public static void main(String args[]) {
         try {
-            new ClientGui();
+            new ClientGUI();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+        System.out.println("GUI BUILT");
+        while(!(ClientGUI.connected)) {
+        }
+        receive(ClientGUI.in);
 
+    }
+    public static void receive(BufferedReader in){
+        while(isConnected()){}
+            String serverComm;
+            System.out.println("Receiving");
+                try {
+                    while(in.ready()) {
+                        serverComm = in.readLine().trim();
+                        if(!(serverComm.isEmpty())) {
+                        if(serverComm.equalsIgnoreCase("WIPE")) {
+                            serverMsg.setText("");
+                        }else if(serverComm.equalsIgnoreCase("SPACE")){
+                            serverMsg.append("\n");
+                        }
+                            else {
+                            System.out.println("Server: "+serverComm);
+                            serverMsg.append(serverComm+ "\n");
+                            }
+                        }
+                            
+                    }
+                } catch (Exception e) {
+                    System.out.println(e);
+                    e.printStackTrace();
+            }
+    }
+    public String outputLine(String finalISBN, String title, String author, String publisher, String year) {
+    	String line = "";
+    	if((finalISBN!=null && !finalISBN.isEmpty())&& !(finalISBN.equals("N/A"))) {
+    		line=line.concat("ISBN "+finalISBN+"\n");
+    	}
+    	if((title!=null && !title.isEmpty())&& !(title.equals("N/A"))) {
+    		line=line.concat("TITLE "+title+"\n");
+    	}
+    	if((author!=null && !author.isEmpty())&& !(author.equals("N/A"))) {
+    		line=line.concat("AUTHOR "+author+"\n");
+    	}
+    	if((publisher!=null && !publisher.isEmpty())&& !(publisher.equals("N/A"))){
+    		line=line.concat("PUBLISHER "+publisher+"\n");
+    	}
+    	if((year!=null && !year.isEmpty())&& !(year.equals("N/A"))) {
+    		line=line.concat("YEAR "+year+"\n");
+    	}
+    	return line;
     }
 }
