@@ -1,5 +1,6 @@
-import java.io.*;
-import java.net.*;
+
+//import java.io.*;
+//import java.net.*;
 import java.net.Socket;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,21 +9,21 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import java.awt.Graphics;
+//import java.awt.Graphics;
 import java.awt.GridLayout;
-import java.awt.Color;
-import java.awt.Font;
+//import java.awt.Color;
+//import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JLabel;
 import javax.swing.JButton;
-import javax.swing.JFrame;
+//import javax.swing.JFrame;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 @SuppressWarnings("serial")
-public class ClientGui extends JFrame implements ActionListener {
+public class ClientGUI extends JFrame implements ActionListener {
     private JTextField ipAddText;
     private JTextField portNoText;
     private JButton connectButton;
@@ -33,11 +34,11 @@ public class ClientGui extends JFrame implements ActionListener {
     private JButton rButton;
     private final String conButton = "Connect";
     private final String disconButton = "Disconnect";
-    protected JTextArea serverMsg;
+    protected static JTextArea serverMsg;
     private JTextArea userMsg;
 
-    private String textIP;
-    private int textPort;
+    //private String textIP;
+    //private int textPort;
     private JPanel panel;
     private JPanel secondaryPanelOne;
     private JPanel secondaryPanelTwo;
@@ -46,11 +47,12 @@ public class ClientGui extends JFrame implements ActionListener {
     private JLabel ipLabel;
     private JLabel portLabel;
 
-    private Socket kkSocket = null;
+    private static  Socket clientSocket = null;
     private PrintWriter out = null;
-    private BufferedReader in = null;
-
-    public ClientGui() {
+    private static BufferedReader in = null;
+    
+    private static boolean connected=false;
+    public ClientGUI() {
         this.panel = new JPanel(new GridLayout(3, 1));
         this.secondaryPanelOne = new JPanel(new GridLayout(1, 5));
         this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
@@ -63,7 +65,10 @@ public class ClientGui extends JFrame implements ActionListener {
         this.portLabel = new JLabel("Port");
         this.portNoText = new JTextField(4);
         this.connectButton = new JButton(conButton);
+        this.sendButton = new JButton("Send Message");
         this.userMsg = new JTextArea();
+        ClientGUI.serverMsg = new JTextArea();
+        
         // this.serverMsg = new JTextArea(10, 30);
         // this.serverMsg.setEditable(false);
         addActionListeners();
@@ -86,15 +91,18 @@ public class ClientGui extends JFrame implements ActionListener {
 
         this.secondaryPanelTwo.add(this.buttonPanel);
         this.secondaryPanelTwo.add(this.userMsg);
+        this.secondaryPanelTwo.add(ClientGUI.serverMsg);
 
-        this.sendButton = new JButton("Send Message");
+        
 
         this.panel.add(this.secondaryPanelOne);
         this.panel.add(this.secondaryPanelTwo);
         this.panel.add(this.sendButton);
         this.add(this.panel);
-        this.setSize(400, 300);
+        this.setSize(800, 600);
         this.setVisible(true);
+       
+        
     }
 
     void addActionListeners() {
@@ -107,13 +115,10 @@ public class ClientGui extends JFrame implements ActionListener {
                 if (connectButton.getText() == conButton && connectToPort(ip, port)) {
                     connectButton.setText(disconButton);
                 } else if (connectButton.getText() == disconButton) {
-                    try {
-                        out.close();  // change variables
-                        in.close();
-                        kkSocket.close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
+					/*
+					 * try { out.close(); // change variables in.close(); clientSocket.close(); }
+					 * catch (IOException e1) { e1.printStackTrace(); }
+					 */
                     connectButton.setText(conButton);
                 }
             }
@@ -123,12 +128,14 @@ public class ClientGui extends JFrame implements ActionListener {
         this.sendButton.addActionListener(new ActionListener() {
 
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent e) {		
                 String message = userMsg.getText();
-                if(message!= "" && isConnected()) {
-                    out.write(message);
+                if((!(message.isBlank())) && isConnected()) {
+                	//System.out.println("Message: "+message);
+                    out.write(message +"\n");
                     out.flush();
                 }
+                //out.write("\n");
             }
         });
     }
@@ -182,10 +189,22 @@ public class ClientGui extends JFrame implements ActionListener {
 
     public static void main(String args[]) {
         try {
-            new ClientGui();
+            new ClientGUI();
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+        System.out.println("Client built");
+        
+        //in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+        /*try {
+			in = new BufferedReader(new InputStreamReader(ClientGUI.clientSocket.getInputStream()));
+		} catch (Exception e) {
+            System.out.println(e);
+            e.printStackTrace();
+        }*/
+        while(!(ClientGUI.connected)) {
+        }
+        receive(ClientGUI.in);
 
     }
 
@@ -196,22 +215,48 @@ public class ClientGui extends JFrame implements ActionListener {
     }
 
     Boolean connectToPort(String ip, int port) {
+    	
         try {
-            kkSocket = new Socket(ip, port);
-            out = new PrintWriter(kkSocket.getOutputStream(), true);
-            in = new BufferedReader(new InputStreamReader(kkSocket.getInputStream()));
+            clientSocket = new Socket(ip, port);
+            out = new PrintWriter(clientSocket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+            System.out.println("Reader and Writer built");
+            connected=true;
             return true;
         } catch (UnknownHostException e) {
-            System.err.println("Don't know about host: taranis.");
-            System.exit(1);
+            System.err.println("Host is unknown");
         } catch (IOException e) {
-            System.err.println("Couldn't get I/O for the connection to: taranis.");
-            System.exit(1);
+            System.err.println("I/O invalid for socket connection");
         }
         return false;
     }
 
-    Boolean isConnected() {
-        return !kkSocket.isClosed();
+    static Boolean isConnected() {
+        return !clientSocket.isClosed();
+    }
+    public static void receive(BufferedReader in){
+        while(isConnected()){}
+            String serverComm;
+            System.out.println("Receiving");
+                try {
+                    while(in.ready()) {
+                        serverComm = in.readLine().trim();
+                        if(!(serverComm.isEmpty())) {
+                        if(serverComm.equalsIgnoreCase("WIPE")) {
+                            serverMsg.setText("");
+                        }else if(serverComm.equalsIgnoreCase("SPACE")){
+                            serverMsg.append("\n");
+                        }
+                            else {
+                            System.out.println("Server: "+serverComm);
+                            serverMsg.append(serverComm+ "\n");
+                            }
+                        }
+                            
+                    }
+                } catch (Exception e) {
+                    System.out.println(e);
+                    e.printStackTrace();
+            }
     }
 }
