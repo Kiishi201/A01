@@ -44,13 +44,10 @@ public class ClientGUI extends JFrame implements ActionListener {
 	private JLabel publisherLabel;
 	private JTextField yearField;
 	private JLabel yearLabel;
-	private JTextArea entr;
 
 	private JPanel panel;
 	private JPanel secondaryPanelOne;
 	private JPanel secondaryPanelTwo;
-	private JPanel inputPanel;
-	private JPanel buttonPanel;
 
 	private JLabel ipLabel;
 	private JLabel portLabel;
@@ -66,8 +63,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 		this.secondaryPanelOne = new JPanel(new GridLayout(3, 5));
 		// this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
 		this.secondaryPanelTwo = new JPanel(new GridLayout(5, 3));
-		this.inputPanel = new JPanel(new GridLayout(5, 2));
-		this.buttonPanel = new JPanel(new GridLayout(4, 1));
 		// this.ipAddText = new JTextField(10);
 		// this.portNoText = new JTextField(5);
 
@@ -95,7 +90,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 		this.yearLabel = new JLabel("Year:	");
 		this.yearLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		this.yearField = new JTextField(20);
-		this.entr = new JTextArea();
 
 		ClientGUI.sButton = new JButton("SUBMIT");
 		ClientGUI.sButton.setEnabled (false);
@@ -192,6 +186,7 @@ public class ClientGUI extends JFrame implements ActionListener {
 					ClientGUI.gButton.setEnabled (false);
 					ClientGUI.rButton.setEnabled (false);
 					ClientGUI.allButton.setEnabled (false);
+					ClientGUI.userMsg.setText("");
 					try {
 						out.close(); // change variables
 						in.close();
@@ -248,7 +243,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 					}
 				} else {
 					// if()
-					entr.setText("Error");
 					System.out.println("GUI submit error");
 				}
 			}
@@ -335,7 +329,7 @@ public class ClientGUI extends JFrame implements ActionListener {
 					String finalISBN = isbnField.getText().replaceAll("-", "");
 					String line;
 					if(ClientGUI.all) {
-						line="GET\nALL";
+						line="GET\nALL\nEND";
 					}
 					else{
 						line = "GET\n".concat(outputLine(finalISBN, titleTextField.getText(),
@@ -351,7 +345,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 					}
 				} else {
 					// if()
-					entr.setText("Error");
 					System.out.println("GUI Get error");
 				}
 			}
@@ -361,12 +354,20 @@ public class ClientGUI extends JFrame implements ActionListener {
 		ClientGUI.rButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int dialogButton = JOptionPane.YES_NO_OPTION;
-				int dialogResult = JOptionPane.showConfirmDialog(null, "warning", "!", dialogButton);
+				String finalISBN = isbnField.getText().replaceAll("-", "");
+				String line;
+				if(ClientGUI.all) {
+						line="REMOVE\nALL";
+				}else {
+					line=outputLine(finalISBN, titleTextField.getText(),
+						authorField.getText(), publisherField.getText(), yearField.getText());
+				}
+				int dialogResult = JOptionPane.showConfirmDialog(null, "Are you sure you want to Remove:\n".concat(line), "Remove?", dialogButton);
 
 				if (dialogResult == JOptionPane.YES_OPTION) {
 					checkMsg(isbnField, titleTextField, authorField, publisherField, yearField);
-
-					String finalISBN = isbnField.getText().replaceAll("-", "");
+					if(ClientGUI.all) { line=line.concat("\nEND");}
+					
 					/*
 					 * String line = "REMOVE\n".concat(outputLine(finalISBN,
 					 * titleTextField.getText(), authorField.getText(), publisherField.getText(),
@@ -376,8 +377,12 @@ public class ClientGUI extends JFrame implements ActionListener {
 					 * ";" + authorField.getText() + ";" + publisherField.getText() + ";" +
 					 * yearField.getText() + "\r\n";
 					 */
-					String line = "REMOVE\n".concat(outputLine(finalISBN, titleTextField.getText(),
-							authorField.getText(), publisherField.getText(), yearField.getText()));
+					/*
+					 * if(ClientGUI.all) { line="REMOVE\nALL\nEND"; } else{ line =
+					 * "REMOVE\n".concat(outputLine(finalISBN, titleTextField.getText(),
+					 * authorField.getText(), publisherField.getText(), yearField.getText())); }
+					 */
+					
 					try {
 						 out.println(line);
 	                     System.out.println("out:\n"+line);
@@ -395,7 +400,7 @@ public class ClientGUI extends JFrame implements ActionListener {
 					}
 
 				} else {
-					entr.append("cancelled");
+					ClientGUI.userMsg.setText("Remove Cancelled");
 				}
 			}
 		});
@@ -592,20 +597,22 @@ public class ClientGUI extends JFrame implements ActionListener {
 			while (ClientGUI.isConnected()) {
 				System.out.println("\n		Bufffered Reader ready");
 				serverComm = in.readLine();
-				if(serverComm != null) {serverComm=serverComm.trim();}
-				System.out.println("		Line read\n");
-				if (!(serverComm.isEmpty())) {
-					if (serverComm.equalsIgnoreCase("END")) {
-						System.out.println("		END received");
-						break;
-					} else if (serverComm.equalsIgnoreCase("WIPE")) {
-						System.out.println("		Wipe received");
-						userMsg.setText("");
-					} else if (serverComm.equalsIgnoreCase("SPACE")) {
-						userMsg.append("\n");
-					} else {
-						System.out.println("		Server: " + serverComm);
-						userMsg.append(serverComm + "\n");
+				if(serverComm != null) {
+					serverComm=serverComm.trim();
+					System.out.println("		Line read\n");
+					if (!(serverComm.isEmpty())) {
+						if (serverComm.equalsIgnoreCase("END")) {
+							System.out.println("		END received");
+							break;
+						} else if (serverComm.equalsIgnoreCase("WIPE")) {
+							System.out.println("		Wipe received");
+							userMsg.setText("");
+						} else if (serverComm.equalsIgnoreCase("SPACE")) {
+							userMsg.append("\n");
+						} else {
+							System.out.println("		Server: " + serverComm);
+							userMsg.append(serverComm + "\n");
+						}
 					}
 				}
 			}
@@ -639,6 +646,7 @@ public class ClientGUI extends JFrame implements ActionListener {
 		if ((year != null && !year.isEmpty()) && !(year.equals("N/A"))) {
 			line = line.concat("YEAR " + year + "\n");
 		}
+		line=line.concat("END");
 		return line;
 	}
 }
