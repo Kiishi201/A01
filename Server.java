@@ -8,6 +8,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class Server {
     static CopyOnWriteArrayList<Bibliography> database = new CopyOnWriteArrayList<Bibliography>();// Multithread safe
+    //static int counter=1;
     // arraylist of type
     // bibliogrpahy
 	//static ArrayList<Bibliography> database = new ArrayList<Bibliography>();// Multithread safe
@@ -83,12 +84,24 @@ public final class Server {
             		BufferedReader br = new BufferedReader(new InputStreamReader(is));
                     process(is, os, br);
                     while(!(socket.isClosed())) {
+                    	try {
                     	process(is, os, br);
+                    	}catch(SocketException e) {
+                    		os.close();
+                            br.close();
+                            socket.close();
+                    	}
                     }
                     os.close();
                     br.close();
                     socket.close();
                 } catch (Exception e) {
+                    try {
+						socket.close();
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
                     System.out.println(e);
                     e.printStackTrace();
                 }
@@ -131,10 +144,10 @@ public final class Server {
 	                    queries.add(temp);// Add to query array
 	                    System.out.println(line);
             		}
-                    
+
                 }//Repeat for all lists received
-                if(requestType.equalsIgnoreCase("SUBMIT")){// If req type is submit
-                	
+                if(requestType.equalsIgnoreCase("SUBMIT")){// If req type is submit    
+                	System.out.println("\nSubmit received");
                     Bibliography bibliography=new Bibliography(); //Bibliography class for storage of bibliography
                     for (Query query : queries){// iterate over every query in the req
                         query.setqueryInt();
@@ -152,7 +165,19 @@ public final class Server {
                         }
                     }
                     if(!(Server.insertDatabase(bibliography))){//insert new bibliography into database
-                        //send error message
+						os.println("WIPE"); 
+						os.println("SUBMIT not accepted."); 
+						os.println("END");
+						os.flush();
+                    	System.out.println("Submit not accepted\n");
+                    	//Server.counter++;
+                    }else {			
+						os.println("WIPE"); 
+						os.println("SUBMIT accepted!"); 
+						os.println("END");
+						os.flush();
+                    	System.out.println("Submit accepted\n");
+                    	//Server.counter++;
                     }
                 }
                 
@@ -174,6 +199,18 @@ public final class Server {
                         }
                     }
                     if(Server.updateDatabase(bibliography)){ //send bibliography object to update database method
+                    	os.println("WIPE"); 
+						os.println("UPDATE accepted."); 
+						os.println("END");
+						os.flush();
+                    	System.out.println("Update accepted\n");
+                    }else {			
+						os.println("WIPE"); 
+						os.println("UPDATE not accepted!"); 
+						os.println("END");
+						os.flush();
+                    	System.out.println("Update not accepted\n");
+                    	//Server.counter++;
                     }
                     
                 }
@@ -206,20 +243,23 @@ public final class Server {
                             for(Bibliography biblio : response){//For all the matches in the database
                             ArrayList<String> output=biblio.toarrayString();//returns bibliography as array list of lines to send to client
                                 for (String outLine:output){//For array of lines
-                                    //os.write(outLine);//Sends lines to client
-                                	
-                                	os.println(outLine);
+                                    //os.write(outLine);
+                                	os.println(outLine);//Sends lines to client
                                 }
                                 os.println("SPACE");
                             }
-                            
+                            os.println("END");
                         }else{
                             //os.write("No matches found");
-                            os.println("No matches found");
+                        	os.println("WIPE"); 
+                        	os.println("No matches found");
+    						os.println("END");
                         }
                     }else{
                         //os.write("Database empty, get request invalid");
-                        os.println("Database empty, get request invalid");
+                    	os.println("WIPE"); 
+                    	os.println("Database empty, get request invalid");
+						os.println("END");
                     }
                 }
                 else if(requestType.equalsIgnoreCase("REMOVE")){
@@ -244,11 +284,18 @@ public final class Server {
 	                        }
 	                    }
 	                    if(Server.removeDatabase(bibliography)){//removes entires that match the query from the database
+	                    	os.println("WIPE"); 
+	                    	os.println("Removal Successful");
+							os.println("END");
 	                    }else {
+	                    	os.println("WIPE"); 
 	                    	os.println("No matches found to remove");
+							os.println("END");
 	                    }
                 	}else{
-                        os.println("Database empty, get request invalid");
+                		os.println("WIPE"); 
+                		os.println("Database empty, get request invalid");
+						os.println("END");
                     }
                 }
                 
@@ -399,11 +446,22 @@ public final class Server {
         }
         public static boolean insertDatabase(Bibliography biblio){//Adds bibliography to database
             boolean insert=false;
-            if(!(database.contains(biblio))){//Check if database contains already
+            if(!(checkDatabase(biblio))){
+            	//Check if database contains already
                 database.add(biblio);
                 insert=true;
             }
             return insert;//returns success of insertion process
+        }
+        public static boolean checkDatabase(Bibliography biblio) {
+        	boolean check=false;
+        	for (Bibliography data: database){//Iterate over database to check entries
+                if (data.getISBN().equals(biblio.getISBN())){
+                    check=true;//add to arraylist being returned
+                    break;
+                }
+        	}
+        	return check;
         }
         public static ArrayList<Bibliography> get(Bibliography biblio){
                 return searchDatabase(biblio);
