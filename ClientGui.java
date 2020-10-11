@@ -25,7 +25,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 	private JTextField ipAddText;
 	private JTextField portNoText;
 	private JButton connectButton;
-	private static JButton sendButton;
 	private static JButton uButton;
 	private static JButton sButton;
 	private static JButton gButton;
@@ -63,8 +62,8 @@ public class ClientGUI extends JFrame implements ActionListener {
 	private static boolean all=false;
 
 	public ClientGUI() {
-		this.panel = new JPanel(new GridLayout(4, 1));
-		this.secondaryPanelOne = new JPanel(new GridLayout(1, 5));
+		this.panel = new JPanel(new GridLayout(3, 1));
+		this.secondaryPanelOne = new JPanel(new GridLayout(3, 5));
 		// this.secondaryPanelTwo = new JPanel(new GridLayout(1, 2));
 		this.secondaryPanelTwo = new JPanel(new GridLayout(5, 3));
 		this.inputPanel = new JPanel(new GridLayout(5, 2));
@@ -109,17 +108,24 @@ public class ClientGUI extends JFrame implements ActionListener {
 		ClientGUI.allButton =new JButton("ALL");
 		ClientGUI.allButton.setEnabled (false);
 
-		ClientGUI.sendButton = new JButton("Send Message");
 
 		// this.serverMsg = new JTextArea(10, 30);
 		// this.serverMsg.setEditable(false);
-
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
 		this.secondaryPanelOne.add(this.ipLabel);
 		this.secondaryPanelOne.add(this.ipAddText);
 		this.secondaryPanelOne.add(this.portLabel);
 		this.secondaryPanelOne.add(this.portNoText);
 		this.secondaryPanelOne.add(this.connectButton);
-
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
+		this.secondaryPanelOne.add(new JLabel(""));
 		addActionListeners();
 
 		/*
@@ -160,7 +166,6 @@ public class ClientGUI extends JFrame implements ActionListener {
 		this.panel.add(this.secondaryPanelTwo);
 		this.panel.add(ClientGUI.userMsg);
 		// this.panel.add(ClientGUI.serverMsg);
-		this.panel.add(ClientGUI.sendButton);
 		this.add(this.panel);
 		this.setSize(800, 600);
 		this.setVisible(true);
